@@ -1,9 +1,25 @@
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
-public class Customer {
-
-	private String id;
+public class Customer implements Serializable{
+	
+	
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private int id;
 	private String email;
 	private String name;
 	private String contact;
@@ -14,18 +30,18 @@ public class Customer {
 	
 	public List<Integer> numofTickets;
 //	public List<Flight> flightRegistered;
-	public static List<Customer> customers = UserRunner.getCustomers();
 	
-	public Customer()
-	{
+//	public static List<Customer> customers = UserRunner.getCustomers();
+	
+	public Customer() {
 		
 	}
 	
-	public Customer(String id, String email, String name, String contact, 
+	public Customer( String email, String name, String contact, 
 			String address, int age, String gender,
 			String password) {
 		super();
-		this.id = id;
+
 		this.email = email;
 		this.name = name;
 		this.contact = contact;
@@ -39,26 +55,138 @@ public class Customer {
 	
 	
 	
-	// Getters
-	// Setters
+	
 	// ToStrings
 	
 	
 	
 	
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getContact() {
+		return contact;
+	}
+
+	public void setContact(String contact) {
+		this.contact = contact;
+	}
+
+	public String getAddress() {
+		return address;
+	}
+
+	public void setAddress(String address) {
+		this.address = address;
+	}
+
+	public int getAge() {
+		return age;
+	}
+
+	public void setAge(int age) {
+		this.age = age;
+	}
+
+	public String getGender() {
+		return gender;
+	}
+
+	public void setGender(String gender) {
+		this.gender = gender;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public List<Integer> getNumofTickets() {
+		return numofTickets;
+	}
+
+	public void setNumofTickets(List<Integer> numofTickets) {
+		this.numofTickets = numofTickets;
+	}
+
+	
+
 	/**
 	 * Add new customer
 	 * @param : NA
 	 * @return : NA
 	 */
-	public void addNewCustomer()
+	public void addNewCustomer(Customer newCustomer)
 	{
 		// Take Input from user
 		// name , address, email, password, age, address
 		
-		String name = "X";
-		Customer c1 = new Customer("X","Y","name","123","23", 20,"MN","R");
-		customers.add(c1);
+		ArrayList<Customer> customers = Customer.View();
+		
+        if (customers.isEmpty()) {
+            this.id = 1;
+        } else {
+            this.id = customers.get((customers.size() - 1)).id + 1; 
+            newCustomer.setId(id);
+        }
+        customers.add(newCustomer);
+        File file = new File("Customer.ser");
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (IOException ex) {
+                System.out.println(ex);
+            }
+        }
+        ObjectOutputStream outputStream = null;
+        try {
+            outputStream = new ObjectOutputStream(new FileOutputStream(file));
+            for (int i = 0; i < customers.size(); i++) {
+                outputStream.writeObject(customers.get(i));
+            }
+          
+        } 
+        
+        catch (FileNotFoundException ex) 
+        {
+            System.out.println(ex);
+        } catch (IOException ex) 
+        {
+            System.out.println(ex);
+        } 
+        finally {
+            if (outputStream != null) {
+                try {
+                    outputStream.close();
+                } catch (IOException ex) {
+                    System.out.println(ex);
+                }
+            }
+        }
 	}
 	
 	
@@ -75,15 +203,28 @@ public class Customer {
 	 * @param id
 	 * return : nothing
 	 */
-	public void searchUser(String id)
+	public void searchUser(int id)
 	{
-		for(Customer obj: customers)
-		{
-			if(obj.id==id)
-			{
-				System.out.println(obj);
-			}
-		}
+		boolean isFound = false;
+//        Customer customerWithTheID = customerCollection.get(0);
+		
+		ArrayList<Customer> customerCollection = Customer.View();
+		Customer customerWithTheID=null;
+		
+        for (Customer c : customerCollection) {
+            if (id == c.getId()) {
+                System.out.printf("Customer Found...!!!Here is the Full Record...");
+         
+                isFound = true;
+                customerWithTheID = c;
+                break;
+            }
+        }
+        if (isFound) {
+            System.out.println(customerWithTheID.toString());
+        } else {
+            System.out.printf("%-50sNo Customer with the ID %s Found...!!!\n", " ", id);
+        }
 	}
 	
 	
@@ -94,8 +235,18 @@ public class Customer {
 	 */
 	public boolean emailUnique(String emailId)
 	{
-		
+		ArrayList<Customer> customerCollection = Customer.View();
+		boolean isUnique = false;
+        for (Customer c : customerCollection) {
+            if (emailId.equals(c.getEmail())) {
+                isUnique = true;
+                break;
+            }
+        }
+        return isUnique;
 	}
+	
+	
 	
 	
 	/**
@@ -103,10 +254,62 @@ public class Customer {
 	 * @param : id
 	 * @return : NA
 	 */
-	public void deleteCustomer(String id)
+	public void deleteCustomer(int id)
 	{
 		
+		ArrayList<Customer> customerCollection = Customer.View();
+        boolean isFound = false;
+        for (int i = 0; i < customerCollection.size(); i++) {
+            if (customerCollection.get(i).id == id) {
+            	customerCollection.remove(i);
+            	isFound = true;
+            }
+        }
+        
+        if (isFound) {
+        	
+           System.out.printf("\n%-50sPrinting all  Customer's Data after deleting Customer with the ID %s.....!!!!\n", "", id);
+      
+        File file = new File("Customer.ser");
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (IOException ex) {
+                System.out.println(ex);
+            }
+        }
+        ObjectOutputStream outputStream = null;
+        try {
+            outputStream = new ObjectOutputStream(new FileOutputStream(file));
+            for (int i = 0; i < customerCollection.size(); i++) {
+                outputStream.writeObject(customerCollection.get(i));
+            }
+          
+        } 
+        
+        catch (FileNotFoundException ex) 
+        {
+            System.out.println(ex);
+        } catch (IOException ex) 
+        {
+            System.out.println(ex);
+        } 
+        finally {
+            if (outputStream != null) {
+                try {
+                    outputStream.close();
+                } catch (IOException ex) {
+                    System.out.println(ex);
+                }
+            }
+        }  } else {
+            System.out.printf("%-50sNo Customer with the ID %s Found...!!!\n", " ", id);
+        }
 	}
+	
+	
+	
+	
 	
 	
 	/**
@@ -116,11 +319,54 @@ public class Customer {
 	 */
 	public void printCustomer()
 	{
-		for(Customer c : customers)
+		ArrayList<Customer> customerCollection = Customer.View();
+		for(Customer c : customerCollection)
 		{
 			System.out.println(c);
 		}
 	}
+	
+	
+	public static ArrayList<Customer> View() {
+        ArrayList<Customer> CustomerList = new ArrayList<>(0);
+        ObjectInputStream inputStream = null;
+        try {
+        	// open file for reading
+            inputStream = new ObjectInputStream(new FileInputStream("Customer.ser"));
+            boolean EOF = false;
+            	
+            // Keep reading file until file ends
+            while (!EOF) {
+                try {
+                    Customer myObj = (Customer) inputStream.readObject();
+                    CustomerList.add(myObj);
+                } catch (ClassNotFoundException e) {
+                    System.out.println(e);
+                } catch (EOFException end) {
+                    EOF = true;
+                }
+            }
+        } 
+        catch (Exception e) {
+            System.out.println(e);
+        } 
+//        
+//        catch (IOException e) {
+//            System.out.println(e);
+//        } 
+        
+        finally {
+            try {
+                if (inputStream != null) {
+                    inputStream.close();
+                }
+            } catch (IOException e) {
+                System.out.println(e);
+            }
+        }
+        return CustomerList;
+    }
+
 	
 	
 }
